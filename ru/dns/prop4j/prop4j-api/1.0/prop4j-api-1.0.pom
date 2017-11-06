@@ -58,6 +58,15 @@
 
     <build>
         <plugins>
+            <!-- ДЛЯ MAVEN: ИСПРАВЛЯЕТ КОДИРОВКУ В ЛОГЕРЕ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.7.0</version>
