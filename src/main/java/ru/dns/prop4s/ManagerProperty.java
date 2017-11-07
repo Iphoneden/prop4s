@@ -3,7 +3,12 @@ package ru.dns.prop4s;
 import ru.dns.prop4s.common.ILoader;
 import ru.dns.prop4s.common.Property;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class ManagerProperty {
@@ -13,12 +18,12 @@ public class ManagerProperty {
     private static HashMap<Class<?>, Property> managerProperty = new HashMap<>();
 
     public static <PROPERTY> PROPERTY property(final Class<PROPERTY> pClass) {
-        Property property = managerProperty.get(pClass);
-        return property != null ? (PROPERTY) property.getProperty() : null;
+        Property<PROPERTY> property = managerProperty.get(pClass);
+        return property != null ? property.getProperty() : null;
     }
 
     public static <PROPERTY> Property<PROPERTY> getProperty(final Class<PROPERTY> pClass) {
-        Property property = managerProperty.get(pClass);
+        Property<PROPERTY> property = managerProperty.get(pClass);
         if (property == null) {
             property = putProperty(pClass, null);
         }
@@ -26,19 +31,36 @@ public class ManagerProperty {
     }
 
     public static <PROPERTY> Property<PROPERTY> putProperty(final Class<PROPERTY> pClass, ILoader loader) {
-        Property instance = new Property(pClass, loader);
+        Property<PROPERTY> instance;
+        try {
+            instance = clone(managerProperty.get(pClass), pClass, loader);
+        } catch (IntrospectionException | InvocationTargetException | IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
         managerProperty.put(pClass, instance);
         return instance;
     }
 
-    public static <PROPERTY> Property<PROPERTY> putProperty(final Class<PROPERTY> pClass) throws IOException {
-        Property<PROPERTY> property = managerProperty.get(pClass);
-        ILoader loader = property != null ? property.getLoader() : null;
-        return putProperty(pClass, loader);
+    private static <PROPERTY> Property<PROPERTY> clone(Property<PROPERTY> property, final Class<PROPERTY> pClass, ILoader loader)
+            throws IntrospectionException, InvocationTargetException, IllegalAccessException {
+        Property<PROPERTY> instance = new Property<>(pClass, null);
+        if (property != null) {
+            instance.setNeedUpdated(property.getNeedUpdated());
+            instance.setCheckSum(property.getCheckSum());
+            Object obj = instance.getProperty();
+            Object objRead = property.getProperty();
+            final BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass(), Object.class);
+            for (PropertyDescriptor field : beanInfo.getPropertyDescriptors()) {
+                if (field.getReadMethod() != null && field.getWriteMethod() != null) {
+                    field.getWriteMethod().invoke(obj, field.getReadMethod().invoke(objRead));
+                }
+            }
+            instance.setLoader(loader);
+        }
+        return instance;
     }
 
     public static boolean isNeedAllUpdated() {
-        Collection<Property> values = managerProperty.values();
         for (Property property : managerProperty.values()) {
             try {
                 if (property.isNeedUpdated()) {
@@ -85,7 +107,7 @@ public class ManagerProperty {
                     }
                     bw.flush();
                     iLoader.writeSource(sw);
-                    for(Map.Entry<Property, String> entry : checkSums.entrySet()){
+                    for (Map.Entry<Property, String> entry : checkSums.entrySet()) {
                         Property property = entry.getKey();
                         property.setCheckSum(entry.getValue());
                         property.setNeedUpdated(false);

@@ -21,7 +21,7 @@ public class Property<P> {
         } catch (InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        update();
+        setLoader(loader);
     }
 
     public Property(final Class<P> pClass) throws IOException {
@@ -34,6 +34,11 @@ public class Property<P> {
 
     public ILoader getLoader() {
         return loader;
+    }
+
+    public void setLoader(ILoader loader) {
+        this.loader = loader;
+        update();
     }
 
     public boolean update() {
@@ -62,11 +67,15 @@ public class Property<P> {
         return needUpdated;
     }
 
+    public boolean getNeedUpdated() {
+        return needUpdated;
+    }
+
     public void setNeedUpdated(boolean needUpdated) {
         this.needUpdated = needUpdated;
     }
 
-    String getCheckSum() {
+    public String getCheckSum() {
         return checkSum;
     }
 

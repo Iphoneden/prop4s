@@ -52,8 +52,9 @@ public class UpdateAndWriteTest {
     @org.junit.Test
     public void onWrite() throws IOException {
         URL resource = UpdateAndWriteTest.class.getClassLoader().getResource("test.property");
+        assert resource != null;
         File file = new File(new File(resource.getPath()).getParent(), "write.property");
-        logger.debug("{} {}", file.getAbsolutePath(), file.exists());
+        logger.debug("{} [exist {}]", file.getAbsolutePath(), file.exists());
         if (file.exists()) {
             logger.debug("file deleted {}", file.delete());
         }
@@ -61,13 +62,12 @@ public class UpdateAndWriteTest {
         try {
             Property<SimpleProperty> property = ManagerProperty.putProperty(SimpleProperty.class, new FileLoader(file));
             logger.debug("{}", property.toString());
-            Assert.assertEquals("mast be 2!!", property.getProperty().getField2(), 2, 0);
             ManagerProperty.writeAll();
             assert file.exists();
             assert !ManagerProperty.isNeedUpdated(SimpleProperty.class);
             assert !ManagerProperty.isNeedAllUpdated();
         } finally {
-           // logger.debug("file deleted {}", file.delete());
+           logger.debug("file deleted {}", file.delete());
         }
     }
 
