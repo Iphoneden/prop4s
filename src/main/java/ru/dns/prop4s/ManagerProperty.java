@@ -55,8 +55,8 @@ public class ManagerProperty {
                     field.getWriteMethod().invoke(obj, field.getReadMethod().invoke(objRead));
                 }
             }
-            instance.setLoader(loader);
         }
+        instance.setLoader(loader);
         return instance;
     }
 
